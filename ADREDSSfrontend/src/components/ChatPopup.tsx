@@ -24,6 +24,8 @@ const ChatPopup: React.FC = () => {
     };
 
     useEffect(() => {
+        let handleReceiveMessage: (msg: any) => void;
+
         if (isOpen && activeChat) {
             fetchHistory();
             if (socket) {
@@ -32,13 +34,15 @@ const ChatPopup: React.FC = () => {
                     receiverId: activeChat.userId
                 });
 
-                socket.on('receive_message', (message: any) => {
+                handleReceiveMessage = (message: any) => {
                     setMessages((prev) => [...prev, message]);
-                });
+                };
+
+                socket.on('receive_message', handleReceiveMessage);
             }
         }
         return () => {
-            if (socket) socket.off('receive_message');
+            if (socket && handleReceiveMessage) socket.off('receive_message', handleReceiveMessage);
         };
     }, [isOpen, activeChat, socket]);
 
@@ -134,6 +138,12 @@ const ChatPopup: React.FC = () => {
                             className="flex-1 bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSendMessage(e as any);
+                                }
+                            }}
                         />
                         <button
                             type="submit"

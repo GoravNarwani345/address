@@ -44,7 +44,7 @@ export interface PropertyData {
     category: string;
     bedrooms?: number;
     bathrooms?: number;
-    area?: string;
+    area?: number;
     images: string[];
     coordinates?: {
         lat: number;
@@ -53,6 +53,7 @@ export interface PropertyData {
     status: 'available' | 'sold' | 'rented';
     location?: string;
     image?: string;
+    priceRating?: 'good_deal' | 'fair' | 'overpriced';
     isVerifiedListing?: boolean;
     createdBy?: {
         _id: string;
@@ -100,7 +101,7 @@ const mockProperties: PropertyData[] = [
         category: 'sell',
         bedrooms: 2,
         bathrooms: 2,
-        area: '1000 sq ft',
+        area: 1000,
         images: ['https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1200'],
         coordinates: { lat: 24.8138, lng: 67.0671 },
         status: 'available',
@@ -116,7 +117,7 @@ const mockProperties: PropertyData[] = [
         category: 'sell',
         bedrooms: 4,
         bathrooms: 4,
-        area: '500 sq yard',
+        area: 500,
         images: ['https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=1200'],
         coordinates: { lat: 31.3651, lng: 74.1803 },
         status: 'available',
@@ -343,6 +344,11 @@ export const api = {
 
     async aiSearch(query: string) {
         const response = await instance.get('/properties/ai-search', { params: { query } });
+        return response.data;
+    },
+
+    async getPropertyInsight(propertyData: any) {
+        const response = await instance.post('/ai/property-insight', { propertyData });
         return response.data;
     },
 

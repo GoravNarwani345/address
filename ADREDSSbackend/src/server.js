@@ -15,6 +15,7 @@ const engagementRoutes = require('./routes/engagementRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const supportRoutes = require('./routes/supportRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use('/api/engagement', engagementRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/verification', verificationRoutes);
+app.use('/api/ai', aiRoutes);
 
 
 // Health check

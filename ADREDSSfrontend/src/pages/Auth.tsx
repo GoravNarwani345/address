@@ -21,15 +21,21 @@ interface FormData {
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot' | 'reset'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [otp, setOtp] = useState('');
 
   const [formData, setFormData] = useState<FormData>({
     name: '', email: '', password: '', confirmPassword: '', phone: '', role: 'buyer',
     cnicFront: null, cnicBack: null, agencyName: '', licenseNumber: '', licenseDocument: null
   });
+
+  const isLogin = authMode === 'login';
+  const isSignup = authMode === 'signup';
+  const isForgot = authMode === 'forgot';
+  const isReset = authMode === 'reset';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -62,32 +68,33 @@ const Auth: React.FC = () => {
 
   const validateForm = (): boolean => {
     if (!formData.email.includes('@')) { setError('Enter a valid professional email'); return false }
-    if (formData.password.length < 6) { setError('Password must be at least 6 characters'); return false }
-    if (!isLogin) {
-      if (!formData.name.trim()) { setError('Full name is required'); return false }
-      if (!formData.phone.trim()) { setError('Phone number is required'); return false }
+    if (isLogin || isSignup || isReset) {
+      if (formData.password.length < 6) { setError('Password must be at least 6 characters'); return false }
+    }
+    if (isSignup || isReset) {
+      if (!formData.name.trim() && isSignup) { setError('Full name is required'); return false }
+      if (!formData.phone.trim() && isSignup) { setError('Phone number is required'); return false }
       if (formData.password !== formData.confirmPassword) { setError('Passwords do not match'); return false }
       if (formData.role === 'seller' && (!formData.cnicFront || !formData.cnicBack)) { setError('CNIC images are required for verification'); return false }
       if (formData.role === 'broker' && (!formData.agencyName.trim() || !formData.licenseNumber.trim() || !formData.licenseDocument)) { setError('All broker verification details are required'); return false }
     }
+    if (isReset && !otp) { setError('OTP is required'); return false }
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); clearErrors(); if (!validateForm()) return; setLoading(true);
     try {
-      let data;
       if (isLogin) {
-        const payload = { email: formData.email, password: formData.password };
-        data = await api.auth.signIn(payload);
-      } else {
+        const data = await api.auth.signIn({ email: formData.email, password: formData.password });
+        handleAuthSuccess(data);
+      } else if (isSignup) {
         const fd = new FormData();
         fd.append('name', formData.name);
         fd.append('email', formData.email);
         fd.append('phone', formData.phone);
         fd.append('password', formData.password);
         fd.append('role', formData.role);
-
         if (formData.role === 'seller') {
           if (formData.cnicFront) fd.append('cnicFront', formData.cnicFront);
           if (formData.cnicBack) fd.append('cnicBack', formData.cnicBack);
@@ -97,42 +104,45 @@ const Auth: React.FC = () => {
           fd.append('licenseNumber', formData.licenseNumber);
           if (formData.licenseDocument) fd.append('licenseDocument', formData.licenseDocument);
         }
-        data = await api.auth.signUp(fd);
-      }
-
-      if (data.error || data.message === 'Error') {
-        throw new Error(data.message || 'Authentication failed');
-      }
-
-      const user = data.user;
-      const token = data.token;
-
-      if (token && user) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        window.dispatchEvent(new Event('authChanged'));
-
-        if (!user.verified) {
-          toast.warning('Verify your account to access all features');
-          navigate('/verify', { state: { email: user.email } });
-        } else {
-          toast.success(isLogin ? `Welcome back, ${user.name}` : 'Account secured successfully!');
-          if (user.role === 'admin') {
-            navigate('/admin');
-          } else if (user.role === 'seller' || user.role === 'broker') {
-            navigate('/my-listings');
-          } else {
-            navigate('/');
-          }
-        }
-      } else if (!isLogin) {
-        toast.success('Registration successful. Please sign in.');
-        setIsLogin(true);
+        const data = await api.auth.signUp(fd);
+        handleAuthSuccess(data);
+      } else if (isForgot) {
+        await api.auth.forgotPassword({ email: formData.email });
+        toast.success('Verification code sent to your email');
+        setAuthMode('reset');
+      } else if (isReset) {
+        await api.auth.resetPassword({ email: formData.email, otp, newPassword: formData.password });
+        toast.success('Password updated! Please sign in.');
+        setAuthMode('login');
       }
     } catch (err: any) {
       setError(err.message || 'Connection failed');
       toast.error(err.message || 'Connection failed');
     } finally { setLoading(false) }
+  };
+
+  const handleAuthSuccess = (data: any) => {
+    if (data.error || data.message === 'Error') {
+      throw new Error(data.message || 'Authentication failed');
+    }
+    const { user, token } = data;
+    if (token && user) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      window.dispatchEvent(new Event('authChanged'));
+      if (!user.verified) {
+        toast.warning('Verify your account to access all features');
+        navigate('/verify', { state: { email: user.email } });
+      } else {
+        toast.success(isLogin ? `Welcome back, ${user.name}` : 'Account secured successfully!');
+        if (user.role === 'admin') navigate('/admin');
+        else if (user.role === 'seller' || user.role === 'broker') navigate('/my-listings');
+        else navigate('/');
+      }
+    } else if (isSignup) {
+      toast.success('Registration successful. Please sign in.');
+      setAuthMode('login');
+    }
   };
 
   return (
@@ -149,40 +159,27 @@ const Auth: React.FC = () => {
         <div className="glass p-8 md:p-12 rounded-[2.5rem] border-white/5 shadow-3xl">
           <div className="text-center mb-10">
             <h1 className="text-4xl font-black text-white mb-3">
-              {isLogin ? 'Welcome to ' : 'Join '}
+              {isLogin ? 'Welcome to ' : isSignup ? 'Join ' : isForgot ? 'Account ' : 'Reset '}
               <span className="text-primary italic">ADREDSS</span>
             </h1>
             <p className="text-slate-500 font-medium">
-              {isLogin ? 'Secure access to your intelligent property ecosystem.' : 'Start your journey with AI-powered real estate.'}
+              {isLogin ? 'Secure access to your intelligent property ecosystem.' :
+                isSignup ? 'Start your journey with AI-powered real estate.' :
+                  isForgot ? 'Enter your email to receive a reset code.' : 'Enter the code and your new password.'}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {!isLogin && (
+            {isSignup && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-                <RoleOption
-                  active={formData.role === 'buyer'}
-                  onClick={() => setFormData(p => ({ ...p, role: 'buyer' }))}
-                  icon={ShoppingCart}
-                  label="Buyer"
-                />
-                <RoleOption
-                  active={formData.role === 'seller'}
-                  onClick={() => setFormData(p => ({ ...p, role: 'seller' }))}
-                  icon={Briefcase}
-                  label="Seller"
-                />
-                <RoleOption
-                  active={formData.role === 'broker'}
-                  onClick={() => setFormData(p => ({ ...p, role: 'broker' }))}
-                  icon={ShieldCheck}
-                  label="Broker"
-                />
+                <RoleOption active={formData.role === 'buyer'} onClick={() => setFormData(p => ({ ...p, role: 'buyer' }))} icon={ShoppingCart} label="Buyer" />
+                <RoleOption active={formData.role === 'seller'} onClick={() => setFormData(p => ({ ...p, role: 'seller' }))} icon={Briefcase} label="Seller" />
+                <RoleOption active={formData.role === 'broker'} onClick={() => setFormData(p => ({ ...p, role: 'broker' }))} icon={ShieldCheck} label="Broker" />
               </div>
             )}
 
             <div className="space-y-4">
-              {!isLogin && (
+              {isSignup && (
                 <div className="relative">
                   <User className="absolute left-4 top-4 text-slate-500" size={20} />
                   <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium" placeholder="Full Professional Name" />
@@ -194,37 +191,47 @@ const Auth: React.FC = () => {
                 <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium" placeholder="Corporate Email Address" />
               </div>
 
-              {!isLogin && (
+              {isSignup && (
                 <div className="relative">
                   <Phone className="absolute left-4 top-4 text-slate-500" size={20} />
                   <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium" placeholder="Mobile Number" />
                 </div>
               )}
 
-              <div className="relative">
-                <Lock className="absolute left-4 top-4 text-slate-500" size={20} />
-                <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium" placeholder="Secure Password" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-4 text-slate-500 hover:text-white transition-colors">
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
+              {isReset && (
+                <div className="relative">
+                  <ShieldCheck className="absolute left-4 top-4 text-slate-500" size={20} />
+                  <input type="text" name="otp" value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-bold tracking-[0.5em] text-center" placeholder="000000" maxLength={6} />
+                </div>
+              )}
 
-              {!isLogin && (
+              {(isLogin || isSignup || isReset) && (
                 <div className="relative">
                   <Lock className="absolute left-4 top-4 text-slate-500" size={20} />
-                  <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium" placeholder="Confirm Security Code" />
+                  <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium" placeholder={isReset ? "New Secure Password" : "Secure Password"} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-4 text-slate-500 hover:text-white transition-colors">
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              )}
+
+              {(isSignup || isReset) && (
+                <div className="relative">
+                  <Lock className="absolute left-4 top-4 text-slate-500" size={20} />
+                  <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full p-4 pl-12 glass border-white/5 rounded-2xl text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium" placeholder="Confirm Secure Password" />
+                </div>
+              )}
+
+              {isLogin && (
+                <div className="flex justify-end pr-2">
+                  <button type="button" onClick={() => setAuthMode('forgot')} className="text-sm text-primary hover:underline font-bold">Forgot Password?</button>
                 </div>
               )}
             </div>
 
             <AnimatePresence mode="wait">
-              {!isLogin && formData.role !== 'buyer' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-4 pt-4 border-t border-white/5"
-                >
+              {isSignup && formData.role !== 'buyer' && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 pt-4 border-t border-white/5">
                   <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest pl-2">Verification details</h3>
                   {formData.role === 'broker' ? (
                     <div className="space-y-4">
@@ -253,17 +260,11 @@ const Auth: React.FC = () => {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full p-5 bg-primary hover:bg-blue-700 text-white rounded-2xl font-black text-lg shadow-2xl shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-            >
-              {loading ? (
-                <Loader className="animate-spin" size={24} />
-              ) : (
+            <button type="submit" disabled={loading} className="w-full p-5 bg-primary hover:bg-blue-700 text-white rounded-2xl font-black text-lg shadow-2xl shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50">
+              {loading ? <Loader className="animate-spin" size={24} /> : (
                 <>
-                  {isLogin ? <LogIn size={22} /> : <UserPlus size={22} />}
-                  {isLogin ? 'Enter ADREDSS' : 'Create My Account'}
+                  {isLogin ? <LogIn size={22} /> : isSignup ? <UserPlus size={22} /> : <ShieldCheck size={22} />}
+                  {isLogin ? 'Enter ADREDSS' : isSignup ? 'Create My Account' : isForgot ? 'Send Verification Code' : 'Update Password'}
                 </>
               )}
             </button>
@@ -271,9 +272,9 @@ const Auth: React.FC = () => {
 
           <div className="mt-10 pt-8 border-t border-white/5 text-center">
             <p className="text-slate-500 font-medium">
-              {isLogin ? "Don't have an account yet? " : 'Already have a secure account? '}
-              <button onClick={() => { setIsLogin(!isLogin); clearErrors(); }} className="text-primary font-black hover:underline underline-offset-4 ml-1">
-                {isLogin ? 'Register Now' : 'Sign In'}
+              {isLogin ? "Don't have an account yet? " : isSignup ? 'Already have a secure account? ' : 'Remember your password? '}
+              <button onClick={() => { setAuthMode(isSignup || isForgot || isReset ? 'login' : 'signup'); clearErrors(); }} className="text-primary font-black hover:underline underline-offset-4 ml-1">
+                {isSignup || isForgot || isReset ? 'Sign In' : 'Register Now'}
               </button>
             </p>
           </div>

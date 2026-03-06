@@ -157,10 +157,13 @@ const Listings: React.FC = () => {
                   id={property.id || (property as any)._id}
                   title={property.title}
                   price={typeof property.price === 'number' ? `PKR ${property.price.toLocaleString()}` : property.price}
-                  image={property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'}
+                  images={property.images}
                   location={property.address || 'Location not available'}
                   viewMode={viewMode as 'grid' | 'list'}
                   createdBy={property.createdBy}
+                  bedrooms={property.bedrooms}
+                  bathrooms={property.bathrooms}
+                  area={property.area}
                 />
               ))}
             </div>

@@ -118,9 +118,12 @@ const Home: React.FC = () => {
                 {...property}
                 id={property.id!}
                 price={typeof property.price === 'number' ? `PKR ${property.price.toLocaleString()}` : property.price}
-                image={property.images?.[0] || property.image || `https://images.unsplash.com/photo-${idx === 0 ? '1600585154340-be6161a56a0c' : idx === 1 ? '1600596542815-ffad4c1539a9' : '1600607687960-5a4597a95abb'}?auto=format&fit=crop&w=800&q=80`}
+                images={property.images}
                 location={property.address || property.location || 'Location not available'}
                 createdBy={property.createdBy}
+                bedrooms={property.bedrooms}
+                bathrooms={property.bathrooms}
+                area={property.area}
               />
             </div>
           ))}
@@ -195,12 +198,21 @@ const Home: React.FC = () => {
               {
                 name: "Citizen Colony",
                 tag: "Peaceful",
-                img: "https://images.unsplash.com/photo-1600607687960-5a4597a95abb?auto=format&fit=crop&w=800&q=80",
+                img: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80",
                 stats: "Upcoming"
               }
             ].map((area, idx) => (
               <div key={idx} className="relative group rounded-[2.5rem] overflow-hidden aspect-4/5 cursor-pointer">
-                <img src={area.img} alt={area.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <img
+                  src={area.img}
+                  alt={area.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    const fallback = `https://picsum.photos/seed/spotlight-${idx}/800/1000`;
+                    if (target.src !== fallback) target.src = fallback;
+                  }}
+                />
                 <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/20 to-transparent" />
                 <div className="absolute bottom-10 left-10">
                   <span className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full mb-4 inline-block">{area.tag}</span>

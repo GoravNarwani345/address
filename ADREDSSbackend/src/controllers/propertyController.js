@@ -1,11 +1,11 @@
 const Property = require('../models/Property');
 const sanitizePrice = require('../utils/sanitizePrice');
-
+const priceAnalysis = require('../utils/priceAnalysis');
 
 exports.addProperty = async (req, res) => {
   try {
-    const { title, description, price, address, propertyType, category, bedrooms, bathrooms, area } = req.body;
-    let images = req.body.images || [];
+    const data = { ...req.body };
+    let images = data.images || [];
 
     if (typeof images === 'string') {
       try { images = JSON.parse(images); } catch (e) { images = [images]; }
@@ -15,26 +15,17 @@ exports.addProperty = async (req, res) => {
       const fileUrls = req.files.map(file => `/uploads/properties/${file.filename}`);
       images = [...images, ...fileUrls];
     }
+    data.images = images;
+    data.createdBy = req.userId;
 
-    if (!title || !price || !propertyType || !category) return res.status(400).json({ success: false, message: 'title, price, propertyType and category are required' });
-    if (!['rent', 'sell'].includes(category)) return res.status(400).json({ success: false, message: 'category must be either "rent" or "sell"' });
+    if (!data.title || !data.price || !data.propertyType) {
+      return res.status(400).json({ success: false, message: 'Title, price, and property type are required' });
+    }
 
-    const sanitizedPrice = sanitizePrice(price);
+    data.price = sanitizePrice(data.price);
 
-    const prop = await Property.create({
-      title,
-      description,
-      price: sanitizedPrice,
-      address,
-      propertyType,
-      category,
-      bedrooms,
-      bathrooms,
-      area,
-      images,
-      createdBy: req.userId
-    });
-    return res.status(201).json({ success: true, property: prop });
+    const property = await Property.create(data);
+    return res.status(201).json({ success: true, message: 'Property added successfully', property });
   } catch (error) {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ success: false, message: error.message });
@@ -53,14 +44,12 @@ exports.listProperties = async (req, res) => {
     if (category) filter.category = category;
     if (location) filter.address = { $regex: location, $options: 'i' };
 
-    // Price range filtering
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    // Keyword search in title/description
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -76,11 +65,18 @@ exports.listProperties = async (req, res) => {
       .skip(skip)
       .lean();
 
+    // Inject price ratings
+    const propertiesWithRatings = await Promise.all(props.map(async (p) => {
+      const areaStats = await priceAnalysis.getAreaStats(p.address, p.propertyType, p.category);
+      const rating = priceAnalysis.rateProperty(p.price, p.area, areaStats);
+      return { ...p, priceRating: rating.rating };
+    }));
+
     const total = await Property.countDocuments(filter);
 
     return res.status(200).json({
       success: true,
-      properties: props,
+      properties: propertiesWithRatings,
       pagination: {
         total,
         page: Number(page),

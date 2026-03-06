@@ -34,10 +34,41 @@ const AISearch: React.FC = () => {
         }
     }, [isOpen]);
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!query) return;
-        window.location.href = `/listings?search=${encodeURIComponent(query)}`;
+
+        try {
+            // Call the AI parsing endpoint
+            const response = await fetch('http://localhost:5000/api/ai/parse-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.filter) {
+                const f = data.filter;
+                const params = new URLSearchParams();
+
+                if (f.propertyType) params.append('type', f.propertyType);
+                if (f.category) params.append('category', f.category);
+                if (f.address) params.append('address', f.address);
+                if (f.minPrice) params.append('minPrice', f.minPrice.toString());
+                if (f.maxPrice) params.append('maxPrice', f.maxPrice.toString());
+                if (f.bedrooms) params.append('bedrooms', f.bedrooms.toString());
+                if (f.bathrooms) params.append('bathrooms', f.bathrooms.toString());
+
+                window.location.href = `/listings?${params.toString()}`;
+            } else {
+                // Fallback to simple search if AI fails
+                window.location.href = `/listings?search=${encodeURIComponent(query)}`;
+            }
+        } catch (error) {
+            console.error("AI Search Error:", error);
+            window.location.href = `/listings?search=${encodeURIComponent(query)}`;
+        }
     };
 
     return (

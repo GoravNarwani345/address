@@ -1,19 +1,20 @@
 const Message = require('../models/Message');
 
 const chatHandler = (io, socket) => {
-    console.log('User connected:', socket.id);
+    // Make user join their personal room automatically based on their JWT userId
+    if (socket.userId) {
+        socket.join(socket.userId);
+        console.log(`User ${socket.userId} joined personal room`);
+    }
 
-    // Join a private room between two users (and optionally a property)
+    // Maintain backwards compatibility for join_room, though not strictly needed anymore
     socket.on('join_room', ({ senderId, receiverId, propertyId }) => {
-        // Standardize room name: smallerId_largerId
         const room = [senderId, receiverId].sort().join('_');
         socket.join(room);
-        console.log(`User ${senderId} joined room ${room}`);
     });
 
     socket.on('send_message', async (data) => {
         const { senderId, receiverId, propertyId, content } = data;
-        const room = [senderId, receiverId].sort().join('_');
 
         try {
             // Save message to database
@@ -24,21 +25,23 @@ const chatHandler = (io, socket) => {
                 content
             });
 
-            // Broadcast to users in the room
-            io.to(room).emit('receive_message', {
+            const messagePayload = {
                 ...data,
                 id: newMessage._id,
                 created_at: newMessage.created_at
-            });
+            };
 
-            console.log(`Message from ${senderId} to ${receiverId} in room ${room}: ${content}`);
+            // Emit to both users' personal rooms
+            io.to(senderId).to(receiverId).emit('receive_message', messagePayload);
+
+            console.log(`Message from ${senderId} to ${receiverId}: ${content}`);
         } catch (error) {
             console.error('Error saving message:', error);
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        console.log('User disconnected:', socket.userId || socket.id);
     });
 };
 
