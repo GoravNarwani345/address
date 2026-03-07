@@ -28,20 +28,27 @@ const seedData = async () => {
                 verified: true
             },
             {
-                name: 'Verified Broker One',
+                name: 'Ahmad Khan',
                 email: 'broker@smartstate.com',
                 password: hashedPassword,
                 role: 'broker',
+                phone: '+92 300 1234567',
                 verified: true,
-                isVerifiedBroker: true
+                isVerifiedBroker: true,
+                verificationStatus: 'approved',
+                verificationLevel: 'professional',
+                agencyName: 'Elite Properties',
+                licenseNumber: 'BRK-2024-001'
             },
             {
-                name: 'Top Seller',
+                name: 'Fatima Ali',
                 email: 'seller@smartstate.com',
                 password: hashedPassword,
                 role: 'seller',
+                phone: '+92 301 7654321',
                 verified: true,
-                isVerifiedBroker: false
+                verificationStatus: 'approved',
+                verificationLevel: 'identity'
             },
             {
                 name: 'Active Buyer',

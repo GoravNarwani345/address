@@ -386,7 +386,10 @@ export const api = {
             const response = await instance.get('/chat/conversations');
             return response.data;
         }
-    }
+    },
+
+    // AI Broker
+    post: (url: string, data: any) => instance.post(url, data)
 };
 
 export default instance;

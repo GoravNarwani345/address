@@ -16,6 +16,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const supportRoutes = require('./routes/supportRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const aiBrokerRoutes = require('./routes/aiBrokerRoutes');
 
 const app = express();
 
@@ -58,6 +59,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/verification', verificationRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/ai-broker', aiBrokerRoutes);
 
 
 // Health check

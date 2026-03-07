@@ -9,6 +9,7 @@ const ChatPopup: React.FC = () => {
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [aiEnabled, setAiEnabled] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // B10: Read user data reactively inside the component
@@ -61,9 +62,43 @@ const ChatPopup: React.FC = () => {
         }
     };
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !activeChat || !socket) return;
+        if (!newMessage.trim()) return;
+        if (!activeChat) {
+            console.error('No active chat');
+            return;
+        }
+
+        if (aiEnabled && activeChat.propertyId) {
+            const userMsg = { senderId: currentUserId, content: newMessage, timestamp: new Date() };
+            setMessages(prev => [...prev, userMsg]);
+            setNewMessage('');
+            setLoading(true);
+
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const res = await api.post('/ai-broker/chat', {
+                    propertyId: activeChat.propertyId,
+                    message: newMessage,
+                    userRole: user.role || 'buyer'
+                });
+                if (res.data.success) {
+                    const aiMsg = { senderId: 'ai', content: res.data.response, timestamp: new Date() };
+                    setMessages(prev => [...prev, aiMsg]);
+                }
+            } catch (err) {
+                console.error('AI response failed:', err);
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        if (!socket) {
+            console.error('Socket not connected');
+            return;
+        }
 
         const messageData = {
             senderId: currentUserId,
@@ -71,8 +106,10 @@ const ChatPopup: React.FC = () => {
             propertyId: activeChat.propertyId,
             content: newMessage
         };
-
+        
+        console.log('Sending message:', messageData);
         socket.emit('send_message', messageData);
+        setMessages(prev => [...prev, { senderId: currentUserId, content: newMessage, timestamp: new Date() }]);
         setNewMessage('');
     };
 
@@ -93,38 +130,43 @@ const ChatPopup: React.FC = () => {
                             <User size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="text-white font-bold leading-none">{activeChat.name}</h3>
+                            <h3 className="text-white font-bold leading-none">{activeChat.name || 'Property Owner'}</h3>
                             <span className="text-indigo-200 text-xs">Online</span>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                    >
-                        <X size={20} className="text-white" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                        >
+                            <X size={20} className="text-white" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-                    {loading ? (
-                        <div className="flex justify-center items-center h-full">
-                            <Loader className="animate-spin text-indigo-500" />
-                        </div>
-                    ) : (
-                        messages.map((msg, i) => {
-                            const isMe = (msg.sender?._id || msg.senderId) === currentUserId;
-                            return (
-                                <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${isMe
-                                        ? 'bg-indigo-600 text-white rounded-tr-none'
-                                        : 'bg-slate-800 text-slate-200 rounded-tl-none'
-                                        }`}>
-                                        {msg.content}
-                                    </div>
+                    {messages.map((msg, i) => {
+                        const isMe = (msg.sender?._id || msg.senderId) === currentUserId;
+                        const isAI = msg.senderId === 'ai';
+                        return (
+                            <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+                                    isAI ? 'bg-green-600 text-white rounded-tl-none' :
+                                    isMe ? 'bg-indigo-600 text-white rounded-tr-none'
+                                    : 'bg-slate-800 text-slate-200 rounded-tl-none'
+                                }`}>
+                                    {msg.content}
                                 </div>
-                            );
-                        })
+                            </div>
+                        );
+                    })}
+                    {loading && (
+                        <div className="flex justify-start">
+                            <div className="bg-slate-800 p-3 rounded-2xl rounded-tl-none">
+                                <Loader className="animate-spin text-indigo-500" size={16} />
+                            </div>
+                        </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
@@ -139,9 +181,9 @@ const ChatPopup: React.FC = () => {
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
-                                    handleSendMessage(e as any);
+                                    handleSendMessage(e);
                                 }
                             }}
                         />

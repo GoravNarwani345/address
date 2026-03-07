@@ -22,30 +22,38 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token) {
+            console.log('No token found, socket not initialized');
+            return;
+        }
 
+        console.log('Initializing socket connection...');
         const newSocket = io('http://localhost:5000', {
-            auth: { token }
+            auth: { token },
+            transports: ['websocket', 'polling']
         });
 
         newSocket.on('connect', () => {
-            console.log('Connected to socket server');
+            console.log('✓ Socket connected');
             setConnected(true);
+            setSocket(newSocket);
+        });
+
+        newSocket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
+            setConnected(false);
         });
 
         newSocket.on('disconnect', () => {
-            console.log('Disconnected from socket server');
+            console.log('Socket disconnected');
             setConnected(false);
         });
 
         newSocket.on('receive_message', (message: any) => {
-            // Get current active chat and open state from closures/refs if needed
-            // But for simple notification, we check if the user is the receiver
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const currentUserId = user.id || user._id;
 
             if (message.receiverId === currentUserId) {
-                // If popup is closed or chatting with someone else, show toast
                 toast.info(`New message from ${message.senderName || 'Contact'}: ${message.content}`, {
                     onClick: () => {
                         setActiveChat({
@@ -56,14 +64,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         setIsOpen(true);
                     },
                     icon: () => <span>💬</span>,
-                    toastId: `msg-${message.senderId}` // Avoid duplicate toasts from same user
+                    toastId: `msg-${message.senderId}`
                 });
             }
         });
 
-        setSocket(newSocket);
-
         return () => {
+            console.log('Cleaning up socket connection');
             newSocket.disconnect();
         };
     }, []);
