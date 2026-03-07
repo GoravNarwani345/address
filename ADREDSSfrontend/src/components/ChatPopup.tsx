@@ -27,7 +27,7 @@ const ChatPopup: React.FC = () => {
     useEffect(() => {
         let handleReceiveMessage: (msg: any) => void;
 
-        if (isOpen && activeChat) {
+        if (isOpen && activeChat && currentUserId) {
             fetchHistory();
             if (socket) {
                 socket.emit('join_room', {
@@ -45,20 +45,17 @@ const ChatPopup: React.FC = () => {
         return () => {
             if (socket && handleReceiveMessage) socket.off('receive_message', handleReceiveMessage);
         };
-    }, [isOpen, activeChat, socket]);
+    }, [isOpen, activeChat, socket, currentUserId]);
 
     useEffect(scrollToBottom, [messages]);
 
     const fetchHistory = async () => {
         if (!activeChat) return;
-        setLoading(true);
         try {
             const res = await api.chat.getHistory(activeChat.userId);
             setMessages(res.messages || []);
         } catch (err) {
-            console.error('Failed to fetch chat history');
-        } finally {
-            setLoading(false);
+            console.error('Failed to fetch chat history', err);
         }
     };
 
@@ -70,7 +67,8 @@ const ChatPopup: React.FC = () => {
             return;
         }
 
-        if (aiEnabled && activeChat.propertyId) {
+        // Use AI only if propertyId exists AND aiEnabled is true, OR if no propertyId but receiverId exists
+        if (aiEnabled && (activeChat.propertyId || activeChat.userId)) {
             const userMsg = { senderId: currentUserId, content: newMessage, timestamp: new Date() };
             setMessages(prev => [...prev, userMsg]);
             setNewMessage('');
@@ -80,6 +78,7 @@ const ChatPopup: React.FC = () => {
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 const res = await api.post('/ai-broker/chat', {
                     propertyId: activeChat.propertyId,
+                    receiverId: activeChat.userId,
                     message: newMessage,
                     userRole: user.role || 'buyer'
                 });
@@ -95,6 +94,7 @@ const ChatPopup: React.FC = () => {
             return;
         }
 
+        // Regular socket chat (user to user)
         if (!socket) {
             console.error('Socket not connected');
             return;
@@ -107,7 +107,6 @@ const ChatPopup: React.FC = () => {
             content: newMessage
         };
         
-        console.log('Sending message:', messageData);
         socket.emit('send_message', messageData);
         setMessages(prev => [...prev, { senderId: currentUserId, content: newMessage, timestamp: new Date() }]);
         setNewMessage('');
@@ -121,7 +120,7 @@ const ChatPopup: React.FC = () => {
                 initial={{ opacity: 0, y: 100, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 100, scale: 0.9 }}
-                className="fixed bottom-6 right-6 w-96 h-[500px] bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden glass"
+                className="fixed bottom-6 right-6 w-full sm:w-96 max-w-[calc(100vw-3rem)] h-[500px] max-h-[calc(100vh-3rem)] bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden glass"
             >
                 {/* Header */}
                 <div className="p-4 bg-indigo-600 flex justify-between items-center shadow-lg">

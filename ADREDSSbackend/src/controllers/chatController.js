@@ -37,7 +37,6 @@ exports.getConversations = async (req, res) => {
             .populate('receiver', 'name')
             .lean();
 
-        // Extract unique users
         const conversations = [];
         const seenUsers = new Set();
 
@@ -50,7 +49,8 @@ exports.getConversations = async (req, res) => {
                 conversations.push({
                     user: otherUser,
                     lastMessage: msg.content,
-                    timestamp: msg.created_at
+                    timestamp: msg.created_at,
+                    propertyId: msg.property || null
                 });
             }
         });

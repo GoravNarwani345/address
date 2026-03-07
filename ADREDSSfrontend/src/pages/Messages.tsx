@@ -22,19 +22,18 @@ const Messages: React.FC = () => {
         const fetchConversations = async () => {
             try {
                 const res = await api.chat.getConversations();
-                // Ensure we handle different response structures
-                const rawData = Array.isArray(res) ? res : (res.data || res.conversations || []);
+                const rawData = res.conversations || [];
 
-                // Map the data to ensure we extract names correctly from various possible backend structures
                 const data = rawData.map((conv: any) => ({
-                    userId: conv.userId || conv.otherUser?._id || conv.otherUser?.id || conv.participants?.find((p: any) => p._id !== (JSON.parse(localStorage.getItem('user') || '{}').id))?._id,
-                    name: conv.name || conv.otherUser?.name || conv.user?.name || conv.participants?.find((p: any) => p._id !== (JSON.parse(localStorage.getItem('user') || '{}').id))?.name || 'User',
-                    lastMessage: conv.lastMessage || conv.latestMessage?.content,
-                    lastMessageTime: conv.lastMessageTime || conv.updatedAt || conv.latestMessage?.createdAt,
-                    unreadCount: conv.unreadCount || 0,
+                    userId: conv.user._id,
+                    name: conv.user.name,
+                    lastMessage: conv.lastMessage,
+                    lastMessageTime: conv.timestamp,
+                    unreadCount: 0,
                     propertyId: conv.propertyId
-                })).filter((c: any) => c.userId); // Ensure we have a valid user to chat with
+                }));
 
+                console.log('Conversations with propertyId:', data);
                 setConversations(data);
             } catch (err) {
                 console.error('Failed to load conversations', err);

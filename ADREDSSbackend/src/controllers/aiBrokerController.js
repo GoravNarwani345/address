@@ -6,25 +6,71 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.chatWithAIBroker = async (req, res) => {
   try {
-    const { propertyId, message, userRole } = req.body;
+    const { propertyId, message, userRole, receiverId } = req.body;
     const userId = req.userId;
 
-    const property = await Property.findById(propertyId).populate('createdBy', 'name phone email');
+    console.log('AI Chat Request:', { propertyId, message, userId, receiverId });
+
+    let property;
+    
+    if (propertyId) {
+      property = await Property.findById(propertyId).populate('createdBy', 'name phone email');
+    } else if (receiverId) {
+      property = await Property.findOne({ createdBy: receiverId }).populate('createdBy', 'name phone email');
+    }
+    
     if (!property) return res.status(404).json({ success: false, message: 'Property not found' });
 
     const user = await User.findById(userId);
     const brokerName = property.createdBy.name || 'Ahmad';
     
-    const context = `You are ${brokerName}, a real estate broker in Pakistan. Talk EXACTLY like a real person texting - casual, natural, NO corporate language. Property: ${property.title}, Price: PKR ${property.price.toLocaleString()}, ${property.bedrooms} beds, ${property.area} sq ft, ${property.address}. Client: ${user.name}. Rules: 1) Never mention ADREDSS or any platform name 2) Never say "How can I help" or "dream spot" 3) Talk like WhatsApp chat - short, friendly, real 4) Use Urdu-English mix if natural 5) Be direct about property 6) Max 2 short sentences. Examples: "Hey! Yeah this property is great value. Want to see it?" or "Salam! Price is negotiable, when can you visit?" Client said: ${message}. Your reply:`;
+    // Get previous chat history
+    const Message = require('../models/Message');
+    const previousMessages = await Message.find({
+      $or: [
+        { sender: userId, receiver: property.createdBy._id },
+        { sender: property.createdBy._id, receiver: userId }
+      ],
+      property: property._id
+    }).sort({ created_at: 1 }).limit(10).lean();
+
+    // Build chat history for context
+    let chatHistory = '';
+    if (previousMessages.length > 0) {
+      chatHistory = 'Previous conversation:\n';
+      previousMessages.forEach(msg => {
+        const isClient = msg.sender.toString() === userId;
+        chatHistory += `${isClient ? user.name : brokerName}: ${msg.content}\n`;
+      });
+    }
+    
+    const context = `You are ${brokerName}, a real estate broker in Pakistan. Talk EXACTLY like a real person texting - casual, natural, NO corporate language. Property: ${property.title}, Price: PKR ${property.price.toLocaleString()}, ${property.bedrooms} beds, ${property.area} sq ft, ${property.address}. Client: ${user.name}. ${chatHistory}Rules: 1) Never mention ADREDSS or any platform name 2) Never say "How can I help" or "dream spot" 3) Talk like WhatsApp chat - short, friendly, real 4) Use Urdu-English mix if natural 5) Be direct about property 6) Max 2 short sentences. Examples: "Hey! Yeah this property is great value. Want to see it?" or "Salam! Price is negotiable, when can you visit?" Client said: ${message}. Your reply:`;
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(context);
     const response = result.response.text();
 
+    // Save user message
+    await Message.create({
+      sender: userId,
+      receiver: property.createdBy._id,
+      property: property._id,
+      content: message
+    });
+
+    // Save AI response
+    await Message.create({
+      sender: property.createdBy._id,
+      receiver: userId,
+      property: property._id,
+      content: response
+    });
+
+    console.log('AI Response:', response);
     res.json({ success: true, response });
   } catch (error) {
-    console.error('AI Broker Error:', error);
-    res.status(500).json({ success: false, message: 'AI assistant unavailable' });
+    console.error('AI Broker Error Details:', error.message, error.stack);
+    res.status(500).json({ success: false, message: 'AI assistant unavailable', error: error.message });
   }
 };
 
