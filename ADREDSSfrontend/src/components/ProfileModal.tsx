@@ -195,7 +195,7 @@ const ProfileModal: React.FC<Props> = ({ isOpen, onClose, token, onLogout }) => 
 
   return (
     <div
-      className="fixed inset-0 z-1000 flex items-center justify-center px-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
       tabIndex={-1}
       aria-modal="true"
@@ -236,7 +236,10 @@ const ProfileModal: React.FC<Props> = ({ isOpen, onClose, token, onLogout }) => 
             <div className="text-center py-12">
               <div className="text-red-500 mb-4 font-bold text-xl">Initialization Error</div>
               <p className="text-slate-400 mb-6">{error}</p>
-              <button onClick={onClose} className="bg-primary px-6 py-2 rounded-xl font-bold">Close Portal</button>
+              <div className="flex gap-4 justify-center">
+                <button onClick={onLogout} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-6 py-2 rounded-xl font-bold transition-all">Logout</button>
+                <button onClick={onClose} className="bg-primary px-6 py-2 rounded-xl font-bold">Close</button>
+              </div>
             </div>
           ) : profile && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">

@@ -5,14 +5,13 @@ const allowSelfSigned = process.env.ALLOW_SELF_SIGNED === 'true';
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || undefined,
   port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : undefined,
-  // set secure explicitly when EMAIL_SECURE is 'true' (commonly port 465)
   secure: process.env.EMAIL_SECURE === 'true',
   auth: process.env.EMAIL_USER && process.env.EMAIL_PASS ? {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   } : undefined,
-  // allow self-signed certificates when explicitly enabled via env var
-  tls: allowSelfSigned ? { rejectUnauthorized: false } : undefined
+  tls: allowSelfSigned ? { rejectUnauthorized: false } : undefined,
+  family: 4
 });
 
 // Optional: verify transporter on startup to surface connection errors early
