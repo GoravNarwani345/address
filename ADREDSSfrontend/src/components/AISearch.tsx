@@ -4,11 +4,11 @@ import { Sparkles, X, MapPin, Home, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const suggestions = [
-    "Modern apartments in Qasimabad Hyderabad",
-    "Luxury villas in Latifabad under 50M",
-    "3 bedroom houses in Gulistan-e-Sajjad with parking",
-    "Commercial plots near Saddar area Hyderabad",
-    "Renovated flats in Citizen Colony with 24/7 water"
+    "3 bedroom house in Qasimabad, Hyderabad under 20M",
+    "Luxury flat in Latifabad Unit 7 for rent",
+    "Modern apartment in Citizen Colony with parking",
+    "House for sale in Gulistan-e-Sajjad, Hyderabad",
+    "2 bedroom flat in Saddar area under 15M"
 ];
 
 const AISearch: React.FC = () => {
@@ -36,10 +36,9 @@ const AISearch: React.FC = () => {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query) return;
+        if (!query.trim()) return;
 
         try {
-            // Call the AI parsing endpoint
             const response = await fetch('http://localhost:5000/api/ai/parse-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -54,15 +53,13 @@ const AISearch: React.FC = () => {
 
                 if (f.propertyType) params.append('type', f.propertyType);
                 if (f.category) params.append('category', f.category);
-                if (f.address) params.append('address', f.address);
+                if (f.address) params.append('location', f.address);
                 if (f.minPrice) params.append('minPrice', f.minPrice.toString());
                 if (f.maxPrice) params.append('maxPrice', f.maxPrice.toString());
                 if (f.bedrooms) params.append('bedrooms', f.bedrooms.toString());
-                if (f.bathrooms) params.append('bathrooms', f.bathrooms.toString());
 
                 window.location.href = `/listings?${params.toString()}`;
             } else {
-                // Fallback to simple search if AI fails
                 window.location.href = `/listings?search=${encodeURIComponent(query)}`;
             }
         } catch (error) {

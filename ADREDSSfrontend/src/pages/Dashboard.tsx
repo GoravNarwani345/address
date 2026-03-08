@@ -10,6 +10,7 @@ const Dashboard: React.FC = () => {
     const [user, setUser] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'market' | 'leads'>('market');
     const [professionalStats, setProfessionalStats] = useState<any>(null);
+    const [timeRange, setTimeRange] = useState<'1M' | '6M' | '1Y' | 'ALL'>('6M');
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -38,6 +39,12 @@ const Dashboard: React.FC = () => {
         };
         fetchStats();
     }, []);
+
+    const getFilteredTrends = () => {
+        if (!stats?.trends) return [];
+        const months = { '1M': 1, '6M': 6, '1Y': 12, 'ALL': 999 };
+        return stats.trends.slice(-months[timeRange]);
+    };
 
     const isProfessional = user?.role === 'seller' || user?.role === 'broker';
 
@@ -119,15 +126,19 @@ const Dashboard: React.FC = () => {
                                         <h2 className="text-2xl font-black">Price Appreciation Trends</h2>
                                     </div>
                                     <div className="flex gap-2">
-                                        {['1M', '6M', '1Y', 'ALL'].map(t => (
-                                            <button key={t} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${t === '6M' ? 'bg-primary text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white'}`}>
+                                        {(['1M', '6M', '1Y', 'ALL'] as const).map(t => (
+                                            <button 
+                                                key={t} 
+                                                onClick={() => setTimeRange(t)}
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${t === timeRange ? 'bg-primary text-white shadow-lg' : 'bg-slate-900 text-slate-500 hover:text-white'}`}
+                                            >
                                                 {t}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <MarketChart data={stats} />
+                                    <MarketChart data={{ ...stats, trends: getFilteredTrends() }} />
                                 </div>
                             </div>
 
@@ -139,9 +150,34 @@ const Dashboard: React.FC = () => {
                                     </div>
                                     <h3 className="text-xl font-bold mb-6">Investment Insight</h3>
                                     <p className="text-slate-400 text-sm leading-relaxed mb-8">
-                                        Based on current trends in <span className="text-white font-bold underline">Qasimabad Hyderabad</span>, property values are projected to increase by 4.5% in the next quarter. Verified broker listings sell <span className="text-primary font-bold">15% faster</span> than unverified ones.
+                                        Based on current trends in <span className="text-white font-bold underline">Qasimabad, Hyderabad</span>, property values are projected to increase by 4.5% in the next quarter. Verified broker listings sell <span className="text-primary font-bold">15% faster</span> than unverified ones.
                                     </p>
-                                    <button className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform">
+                                    <button 
+                                        onClick={async () => {
+                                            try {
+                                                const token = localStorage.getItem('token');
+                                                const response = await fetch('http://localhost:5000/api/analytics/download?type=market', {
+                                                    method: 'GET',
+                                                    headers: {
+                                                        'Authorization': `Bearer ${token}`
+                                                    }
+                                                });
+                                                if (!response.ok) throw new Error('Download failed');
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                link.href = url;
+                                                link.setAttribute('download', 'market-report.csv');
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                link.remove();
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                            }
+                                        }}
+                                        className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
+                                    >
                                         Download Full Report
                                     </button>
                                 </div>
@@ -149,8 +185,8 @@ const Dashboard: React.FC = () => {
                                 <div className="glass p-8 rounded-4xl border-white/5">
                                     <h3 className="text-xl font-bold mb-6">Recent Alerts</h3>
                                     <div className="space-y-4">
-                                        <AlertItem title="Price Drop in Islamabad" time="2h ago" />
-                                        <AlertItem title="New 500yd House DHA" time="5h ago" />
+                                        <AlertItem title="Price Drop in Latifabad, Hyderabad" time="2h ago" />
+                                        <AlertItem title="New House in Qasimabad, Hyderabad" time="5h ago" />
                                         <AlertItem title="Broker Verification Approved" time="1d ago" />
                                     </div>
                                 </div>

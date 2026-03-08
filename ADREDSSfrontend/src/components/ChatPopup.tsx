@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Send, User, Loader } from 'lucide-react';
+import { X, Send, User, Loader, Bot } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,13 @@ const ChatPopup: React.FC = () => {
         try {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             return user.id || user._id;
+        } catch { return null; }
+    }, [isOpen]);
+
+    const userRole = useMemo(() => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            return user.role;
         } catch { return null; }
     }, [isOpen]);
 
@@ -123,7 +130,7 @@ const ChatPopup: React.FC = () => {
                 className="fixed bottom-6 right-6 w-full sm:w-96 max-w-[calc(100vw-3rem)] h-[500px] max-h-[calc(100vh-3rem)] bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden glass"
             >
                 {/* Header */}
-                <div className="p-4 bg-indigo-600 flex justify-between items-center shadow-lg">
+                <div className="p-4 bg-indigo-600 flex justify-between items-center shadow-lg relative overflow-visible">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                             <User size={20} className="text-white" />
@@ -134,6 +141,21 @@ const ChatPopup: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        {(userRole === 'broker' || userRole === 'seller') && (
+                            <div className="relative group">
+                                <button
+                                    onClick={() => setAiEnabled(!aiEnabled)}
+                                    className={`p-2 rounded-full transition-all ${
+                                        aiEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-white/10 hover:bg-white/20'
+                                    }`}
+                                >
+                                    <Bot size={20} className="text-white" />
+                                </button>
+                                <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-slate-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg border border-white/10 z-50">
+                                    {aiEnabled ? 'AI Agent: ON' : 'AI Agent: OFF'}
+                                </div>
+                            </div>
+                        )}
                         <button
                             onClick={() => setIsOpen(false)}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors"

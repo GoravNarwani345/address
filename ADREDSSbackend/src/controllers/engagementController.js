@@ -1,6 +1,7 @@
 const Inquiry = require('../models/Inquiry');
 const User = require('../models/User');
 const Property = require('../models/Property');
+const { sendEmail } = require('../utils/email');
 
 // Create a new inquiry (Contact or Booking)
 exports.createInquiry = async (req, res) => {
@@ -25,6 +26,23 @@ exports.createInquiry = async (req, res) => {
             bookingDate,
             status: 'pending'
         });
+
+        // Send email notification to seller/broker
+        const seller = await User.findById(property.createdBy);
+        const buyer = await User.findById(userId);
+        
+        if (seller && seller.email) {
+            const subject = `New ${type === 'contact' ? 'Inquiry' : 'Booking Request'} for ${property.title}`;
+            const html = `
+                <h2>New ${type === 'contact' ? 'Inquiry' : 'Booking Request'}</h2>
+                <p><strong>Property:</strong> ${property.title}</p>
+                <p><strong>From:</strong> ${buyer?.name || 'Buyer'} (${buyer?.email || 'N/A'})</p>
+                ${message ? `<p><strong>Message:</strong> ${message}</p>` : ''}
+                ${bookingDate ? `<p><strong>Booking Date:</strong> ${new Date(bookingDate).toLocaleDateString()}</p>` : ''}
+                <p>Please log in to your dashboard to respond.</p>
+            `;
+            await sendEmail(seller.email, subject, subject, html);
+        }
 
         res.status(201).json({ success: true, data: inquiry });
     } catch (error) {
@@ -69,7 +87,7 @@ exports.updateInquiryStatus = async (req, res) => {
         const { status } = req.body;
         const userId = req.userId;
 
-        const inquiry = await Inquiry.findById(id);
+        const inquiry = await Inquiry.findById(id).populate('user').populate('property');
         if (!inquiry) return res.status(404).json({ success: false, message: 'Inquiry not found' });
 
         // Only the receiver (seller) can update status
@@ -79,6 +97,18 @@ exports.updateInquiryStatus = async (req, res) => {
 
         inquiry.status = status;
         await inquiry.save();
+
+        // Send email notification to buyer
+        if (inquiry.user && inquiry.user.email) {
+            const subject = `Inquiry Status Updated: ${inquiry.property?.title || 'Property'}`;
+            const html = `
+                <h2>Your Inquiry Status Has Been Updated</h2>
+                <p><strong>Property:</strong> ${inquiry.property?.title || 'N/A'}</p>
+                <p><strong>New Status:</strong> ${status}</p>
+                <p>Please log in to your dashboard for more details.</p>
+            `;
+            await sendEmail(inquiry.user.email, subject, subject, html);
+        }
 
         res.status(200).json({ success: true, message: 'Status updated', data: inquiry });
     } catch (error) {

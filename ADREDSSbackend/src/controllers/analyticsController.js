@@ -126,3 +126,87 @@ exports.getLeadStats = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Error fetching lead stats' });
     }
 };
+
+exports.downloadReport = async (req, res) => {
+    try {
+        const { type } = req.query;
+        const userId = req.userId;
+        const userRole = req.userRole;
+
+        let data = [];
+        let filename = 'report.csv';
+
+        if (type === 'properties') {
+            const filter = (userRole === 'broker' || userRole === 'seller') ? { createdBy: userId } : {};
+            const properties = await Property.find(filter)
+                .populate('createdBy', 'name email')
+                .lean();
+            
+            data = properties.map(p => ({
+                Title: p.title,
+                Price: p.price,
+                Address: p.address,
+                Type: p.propertyType,
+                Category: p.category,
+                Bedrooms: p.bedrooms,
+                Bathrooms: p.bathrooms,
+                Area: p.area,
+                Status: p.status,
+                Owner: p.createdBy?.name || 'N/A',
+                Created: new Date(p.created_at).toLocaleDateString()
+            }));
+            filename = 'properties-report.csv';
+        } else if (type === 'inquiries') {
+            const filter = userRole === 'buyer' ? { user: userId } : { seller: userId };
+            const inquiries = await Inquiry.find(filter)
+                .populate('property', 'title price')
+                .populate('user', 'name email')
+                .lean();
+            
+            data = inquiries.map(i => ({
+                Property: i.property?.title || 'N/A',
+                Price: i.property?.price || 'N/A',
+                Type: i.type,
+                Status: i.status,
+                Buyer: i.user?.name || 'N/A',
+                Message: i.message || 'N/A',
+                Date: new Date(i.created_at).toLocaleDateString()
+            }));
+            filename = 'inquiries-report.csv';
+        } else if (type === 'market') {
+            const properties = await Property.find().lean();
+            const stats = await Property.aggregate([
+                {
+                    $group: {
+                        _id: '$address',
+                        avgPrice: { $avg: '$price' },
+                        count: { $sum: 1 }
+                    }
+                }
+            ]);
+            
+            data = stats.map(s => ({
+                Area: s._id,
+                'Average Price': Math.round(s.avgPrice),
+                'Total Listings': s.count
+            }));
+            filename = 'market-report.csv';
+        } else {
+            return res.status(400).json({ success: false, message: 'Invalid report type' });
+        }
+
+        if (data.length === 0) {
+            return res.status(404).json({ success: false, message: 'No data available for report' });
+        }
+
+        const csv = data.map(row => Object.values(row).join(',')).join('\n');
+        const header = Object.keys(data[0]).join(',');
+        const csvContent = header + '\n' + csv;
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        return res.status(200).send(csvContent);
+    } catch (error) {
+        console.error('Download Report Error:', error);
+        return res.status(500).json({ success: false, message: 'Error generating report' });
+    }
+};

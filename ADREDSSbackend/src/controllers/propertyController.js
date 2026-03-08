@@ -22,6 +22,22 @@ exports.addProperty = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Title, price, and property type are required' });
     }
 
+    if (!data.address || !data.description) {
+      return res.status(400).json({ success: false, message: 'Address and description are required' });
+    }
+
+    if (data.bedrooms && data.bedrooms < 0) {
+      return res.status(400).json({ success: false, message: 'Bedrooms must be a positive number' });
+    }
+
+    if (data.bathrooms && data.bathrooms < 0) {
+      return res.status(400).json({ success: false, message: 'Bathrooms must be a positive number' });
+    }
+
+    if (data.area && data.area <= 0) {
+      return res.status(400).json({ success: false, message: 'Area must be greater than 0' });
+    }
+
     data.price = sanitizePrice(data.price);
 
     const property = await Property.create(data);
@@ -39,6 +55,12 @@ exports.listProperties = async (req, res) => {
   try {
     const { type, category, search, minPrice, maxPrice, location, limit = 10, page = 1 } = req.query;
     const filter = { status: 'available' };
+
+    // Role-based filtering: brokers and sellers see only their own properties
+    if (req.userRole === 'broker' || req.userRole === 'seller') {
+      filter.createdBy = req.userId;
+    }
+    // Buyers and admins see all properties
 
     if (type) filter.propertyType = type;
     if (category) filter.category = category;

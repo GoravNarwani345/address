@@ -21,13 +21,18 @@ const chatHandler = (io, socket) => {
                 content
             });
 
+            const populatedMessage = await Message.findById(newMessage._id).populate('sender', 'name');
+
             const messagePayload = {
                 ...data,
                 id: newMessage._id,
-                created_at: newMessage.created_at
+                created_at: newMessage.created_at,
+                senderName: populatedMessage?.sender?.name || 'User'
             };
 
-            io.to(senderId).to(receiverId).emit('receive_message', messagePayload);
+            const room = [senderId, receiverId].sort().join('_');
+            io.to(room).emit('receive_message', messagePayload);
+            io.to(receiverId).emit('receive_message', messagePayload);
         } catch (error) {
             console.error('Error saving message:', error);
         }
