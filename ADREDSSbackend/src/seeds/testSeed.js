@@ -24,7 +24,7 @@ const run = async () => {
         isVerifiedBroker: true,
         verificationStatus: 'approved',
         verificationLevel: 'professional',
-        agencyName: 'Elite Properties',
+        agencyName: 'ADREDSS Properties',
         licenseNumber: 'BRK-2024-001'
       },
       { upsert: true, new: true }

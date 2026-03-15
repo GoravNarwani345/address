@@ -597,7 +597,7 @@ const ProfileModal: React.FC<Props> = ({ isOpen, onClose, token, onLogout }) => 
                                       value={verifData.agencyName}
                                       onChange={(e) => setVerifData({ ...verifData, agencyName: e.target.value })}
                                       className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"
-                                      placeholder="Elite Estates"
+                                      placeholder="ADREDSS Estates"
                                     />
                                   </div>
                                   <div className="space-y-2">

@@ -53,7 +53,7 @@ exports.addProperty = async (req, res) => {
 
 exports.listProperties = async (req, res) => {
   try {
-    const { type, category, search, minPrice, maxPrice, location, limit = 10, page = 1 } = req.query;
+    const { type, category, search, minPrice, maxPrice, location, bedrooms, bathrooms, limit = 10, page = 1 } = req.query;
     const filter = { status: 'available' };
 
     // Role-based filtering: brokers and sellers see only their own properties
@@ -65,6 +65,8 @@ exports.listProperties = async (req, res) => {
     if (type) filter.propertyType = type;
     if (category) filter.category = category;
     if (location) filter.address = { $regex: location, $options: 'i' };
+    if (bedrooms) filter.bedrooms = { $gte: Number(bedrooms) };
+    if (bathrooms) filter.bathrooms = { $gte: Number(bathrooms) };
 
     if (minPrice || maxPrice) {
       filter.price = {};

@@ -237,7 +237,7 @@ export const api = {
     },
 
     // Properties
-    async getProperties(params?: { type?: string; category?: string; location?: string; search?: string; minPrice?: number; maxPrice?: number; limit?: number; page?: number }) {
+    async getProperties(params?: { type?: string; category?: string; location?: string; search?: string; minPrice?: number; maxPrice?: number; bedrooms?: number; bathrooms?: number; limit?: number; page?: number }) {
         try {
             const response = await instance.get('/properties', { params });
             let rawData = response.data;

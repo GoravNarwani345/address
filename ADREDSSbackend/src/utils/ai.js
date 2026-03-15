@@ -32,18 +32,26 @@ const ai = {
             const response = await result.response;
             let text = response.text();
 
-            // Clean markdown blocks if Gemini returns them
-            text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            // More robust JSON extraction for different Gemini formats
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                text = jsonMatch[0];
+            } else {
+                text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            }
 
             return JSON.parse(text);
         } catch (error) {
             console.error("Gemini Generation Error:", Math.random()); // simple distinct log to avoid long dumps
             // Return a safe neutral fallback for semantic search
             return {
-                "type": "residential",
-                "action": "view",
-                "location": "",
-                "features": []
+                "propertyType": null,
+                "category": null,
+                "address": null,
+                "minPrice": null,
+                "maxPrice": null,
+                "bedrooms": null,
+                "bathrooms": null
             };
         }
     },

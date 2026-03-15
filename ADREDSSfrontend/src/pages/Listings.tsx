@@ -23,6 +23,10 @@ const Listings: React.FC = () => {
         const type = searchParams.get('type') || undefined;
         const category = searchParams.get('category') || undefined;
         const location = searchParams.get('location') || undefined;
+        const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined;
+        const maxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined;
+        const bedrooms = searchParams.get('bedrooms') ? Number(searchParams.get('bedrooms')) : undefined;
+        const bathrooms = searchParams.get('bathrooms') ? Number(searchParams.get('bathrooms')) : undefined;
         const searchQuery = searchParams.get('search') || undefined;
 
         let result: PropertyData[] = [];
@@ -34,7 +38,7 @@ const Listings: React.FC = () => {
           toast.info(`AI parsed your search: ${searchQuery}`, { autoClose: 2000 });
         } else {
           // Standard filtering
-          const data = await api.getProperties({ type, category, location });
+          const data = await api.getProperties({ type, category, location, minPrice, maxPrice, bedrooms, bathrooms });
           result = Array.isArray(data) ? [...data] : [];
         }
 

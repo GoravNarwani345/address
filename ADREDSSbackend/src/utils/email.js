@@ -24,7 +24,7 @@ if (process.env.EMAIL_HOST && process.env.NODE_ENV !== 'test') {
 }
 
 const sendEmail = async (to, subject, text, html) => {
-  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'no-reply@elite-estate.com';
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'no-reply@adredss.com';
   const mailOptions = { from, to, subject, text, html };
   try {
     const info = await transporter.sendMail(mailOptions);

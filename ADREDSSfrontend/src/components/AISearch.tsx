@@ -14,6 +14,7 @@ const suggestions = [
 const AISearch: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -36,8 +37,9 @@ const AISearch: React.FC = () => {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query.trim()) return;
+        if (!query.trim() || isLoading) return;
 
+        setIsLoading(true);
         try {
             const response = await fetch('http://localhost:5000/api/ai/parse-search', {
                 method: 'POST',
@@ -57,6 +59,7 @@ const AISearch: React.FC = () => {
                 if (f.minPrice) params.append('minPrice', f.minPrice.toString());
                 if (f.maxPrice) params.append('maxPrice', f.maxPrice.toString());
                 if (f.bedrooms) params.append('bedrooms', f.bedrooms.toString());
+                if (f.bathrooms) params.append('bathrooms', f.bathrooms.toString());
 
                 window.location.href = `/listings?${params.toString()}`;
             } else {
@@ -65,6 +68,8 @@ const AISearch: React.FC = () => {
         } catch (error) {
             console.error("AI Search Error:", error);
             window.location.href = `/listings?search=${encodeURIComponent(query)}`;
+        } finally {
+            setIsLoading(false);
         }
     };
 

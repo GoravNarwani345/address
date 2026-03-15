@@ -71,8 +71,16 @@ const Navbar: React.FC = () => {
     <>
       <nav className="fixed top-0 w-full glass text-white shadow-lg z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-blue-400 hover:text-blue-300 transition tracking-tight">
-            ADREDSS
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="relative">
+              <div className="bg-gradient-to-tr from-blue-600 to-cyan-400 p-2 rounded-xl transform group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-blue-500/20">
+                <Home size={22} className="text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-slate-900 group-hover:scale-125 transition-transform" />
+            </div>
+            <span className="text-3xl font-[900] tracking-tighter font-['Outfit'] bg-clip-text text-transparent bg-gradient-to-r from-white via-white/90 to-blue-400 group-hover:to-cyan-400 transition-all">
+              ADREDSS
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

@@ -37,7 +37,7 @@ const seedData = async () => {
                 isVerifiedBroker: true,
                 verificationStatus: 'approved',
                 verificationLevel: 'professional',
-                agencyName: 'Elite Properties',
+                agencyName: 'ADREDSS Properties',
                 licenseNumber: 'BRK-2024-001'
             },
             {

@@ -15,6 +15,8 @@ import Favorites from './pages/Favorites';
 import Messages from './pages/Messages';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 import ChatPopup from './components/ChatPopup';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -90,6 +92,8 @@ function App() {
               <Route path="/verify" element={<VerifyOtp />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
             </Routes>
           </main>
           <ChatPopup />
