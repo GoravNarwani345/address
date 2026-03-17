@@ -83,7 +83,11 @@ function App() {
                   <Messages />
                 </ProtectedRoute>
               } />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute allowedRoles={['seller', 'broker', 'buyer']}>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
               <Route path="/admin" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminPanel />

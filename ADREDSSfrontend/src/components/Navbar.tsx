@@ -73,12 +73,12 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
-              <div className="bg-gradient-to-tr from-blue-600 to-cyan-400 p-2 rounded-xl transform group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-blue-500/20">
+              <div className="bg-linear-to-tr from-blue-600 to-cyan-400 p-2 rounded-xl transform group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-blue-500/20">
                 <Home size={22} className="text-white" />
               </div>
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-slate-900 group-hover:scale-125 transition-transform" />
             </div>
-            <span className="text-3xl font-[900] tracking-tighter font-['Outfit'] bg-clip-text text-transparent bg-gradient-to-r from-white via-white/90 to-blue-400 group-hover:to-cyan-400 transition-all">
+            <span className="text-3xl font-black tracking-tighter font-['Outfit'] bg-clip-text text-transparent bg-linear-to-r from-white via-white/90 to-blue-400 group-hover:to-cyan-400 transition-all">
               ADREDSS
             </span>
           </Link>
@@ -91,9 +91,11 @@ const Navbar: React.FC = () => {
             <Link to="/listings" className="flex items-center gap-2 hover:text-blue-400 transition">
               <List size={20} /> Listings
             </Link>
-            <Link to="/dashboard" className="flex items-center gap-2 hover:text-blue-400 transition">
-              <BarChart2 size={20} /> Market
-            </Link>
+            {role !== 'admin' && (
+              <Link to="/dashboard" className="flex items-center gap-2 hover:text-blue-400 transition">
+                <BarChart2 size={20} /> Market
+              </Link>
+            )}
             {(role === 'seller' || role === 'broker') && (
               <Link to="/add-listing" className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white/5 transition text-sm font-semibold">
                 <PlusCircle size={18} />
@@ -106,12 +108,12 @@ const Navbar: React.FC = () => {
                 <span>Admin Tab</span>
               </Link>
             )}
-            {token && (
+            {token && role !== 'admin' && (
               <Link to="/favorites" className="flex items-center gap-2 hover:text-blue-400 transition" title="Your Favorites">
                 <Heart size={20} /> Favorites
               </Link>
             )}
-            {token && (
+            {token && role !== 'admin' && (
               <Link to="/messages" className="flex items-center gap-2 hover:text-blue-400 transition" title="Messages">
                 <MessageSquare size={20} /> Messages
               </Link>
@@ -194,7 +196,7 @@ const Navbar: React.FC = () => {
                   <ShieldCheck size={20} /> Admin Tab
                 </Link>
               )}
-              {token && (
+              {token && role !== 'admin' && (
                 <Link
                   to="/favorites"
                   className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800 rounded-lg transition"
@@ -203,7 +205,7 @@ const Navbar: React.FC = () => {
                   <Heart size={20} /> Favorites
                 </Link>
               )}
-              {token && (
+              {token && role !== 'admin' && (
                 <Link
                   to="/messages"
                   className="flex items-center gap-3 py-3 px-4 hover:bg-gray-800 rounded-lg transition"
