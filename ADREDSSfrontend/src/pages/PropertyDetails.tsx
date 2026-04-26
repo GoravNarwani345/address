@@ -24,6 +24,7 @@ const PropertyDetails: React.FC = () => {
   const [bookingDate, setBookingDate] = useState('');
   const [bookingMessage, setBookingMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isVerified, setIsVerified] = useState<boolean>(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { openChat } = useChat();
 
@@ -34,6 +35,7 @@ const PropertyDetails: React.FC = () => {
       try {
         currentUser = JSON.parse(userStr);
         setUserRole(currentUser.role);
+        setIsVerified(!!currentUser.verified);
       } catch (e) {
         console.error('Failed to parse user from localStorage');
       }
@@ -105,6 +107,14 @@ const PropertyDetails: React.FC = () => {
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+    if (!localStorage.getItem('token')) {
+      toast.info('Please sign in to book a visit');
+      return;
+    }
+    if (!isVerified) {
+      toast.warning('Please verify your email address to book a visit');
+      return;
+    }
     if (!bookingDate) {
       toast.warning('Please select a date for your visit');
       return;
@@ -168,7 +178,7 @@ const PropertyDetails: React.FC = () => {
   };
 
   const displayPrice = formatPrice(property.price);
-  const displayImage = property.images?.[0] || property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80';
+  const displayImage = property.images?.[0] || property.image || '/propertyimages/defenseiamge1.webp';
 
   return (
     <div className="pt-20 min-h-screen bg-gray-900">
@@ -320,6 +330,11 @@ const PropertyDetails: React.FC = () => {
                         return;
                       }
 
+                      if (!isVerified) {
+                        toast.warning('Please verify your email address to contact the dealer.');
+                        return;
+                      }
+
                       let dealerId = null;
                       let dealerName = 'Property Dealer';
 
@@ -373,7 +388,7 @@ const PropertyDetails: React.FC = () => {
                 >
                   <div className="aspect-video overflow-hidden">
                     <img
-                      src={rec.images?.[0] || rec.image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'}
+                      src={rec.images?.[0] || rec.image || '/propertyimages/naseemnager.webp'}
                       alt={rec.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       onError={(e) => {

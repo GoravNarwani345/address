@@ -118,7 +118,7 @@ const MyListing: React.FC = () => {
               <div key={listing.id || index} className="bg-gray-800 rounded-3xl overflow-hidden border border-gray-700 shadow-xl group hover:border-blue-500 transition-all duration-300">
                 <div className="aspect-video relative overflow-hidden">
                   <img
-                    src={listing.images?.[0] || listing.image || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'}
+                    src={listing.images?.[0] || listing.image || '/propertyimages/defenseiamge1.webp'}
                     alt={listing.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />

@@ -17,7 +17,7 @@ const AddEditListing: React.FC = () => {
     category: 'sell',
     bedrooms: 0,
     bathrooms: 0,
-    area: '',
+    area: 0,
     images: [],
     status: 'available'
   });
@@ -27,9 +27,20 @@ const AddEditListing: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [verifFile, setVerifFile] = useState<File | null>(null);
   const [verifType, setVerifType] = useState<string>('Deed');
+  const [isVerified, setIsVerified] = useState<boolean>(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setIsVerified(!!user.verified);
+      } catch (e) {
+        console.error('Failed to parse user data');
+      }
+    }
+
     if (isEdit && id) {
       const fetchProperty = async () => {
         setFetching(true);
@@ -130,6 +141,16 @@ const AddEditListing: React.FC = () => {
         </h1>
 
         <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+          {!isVerified && (
+            <div className="mb-6 p-6 bg-amber-900/30 border border-amber-600 rounded-2xl flex items-start gap-4">
+              <Info className="text-amber-500 shrink-0 mt-1" size={24} />
+              <div>
+                <h4 className="text-amber-200 font-bold text-lg">Email Verification Required</h4>
+                <p className="text-amber-200/70 text-sm">Please verify your email address to publish or update listings. Check your inbox for the OTP or go to your profile to resend.</p>
+              </div>
+            </div>
+          )}
+
           {error && <div className="mb-6 p-4 bg-red-900/30 border border-red-600 rounded-xl text-red-200">{error}</div>}
           {success && <div className="mb-6 p-4 bg-green-900/30 border border-green-600 rounded-xl text-green-200">{success}</div>}
 
@@ -333,10 +354,10 @@ const AddEditListing: React.FC = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isVerified}
             className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1 disabled:opacity-60 disabled:transform-none"
           >
-            {loading ? 'Saving Changes...' : isEdit ? 'Update Listing' : 'Publish Listing'}
+            {loading ? 'Saving Changes...' : !isVerified ? 'Verification Required' : isEdit ? 'Update Listing' : 'Publish Listing'}
           </button>
         </form>
       </div>

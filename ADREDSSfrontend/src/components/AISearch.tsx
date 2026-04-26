@@ -4,11 +4,11 @@ import { Sparkles, X, MapPin, Home, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const suggestions = [
-    "3 bedroom house in Qasimabad, Hyderabad under 20M",
-    "Luxury flat in Latifabad Unit 7 for rent",
-    "Modern apartment in Citizen Colony with parking",
-    "House for sale in Gulistan-e-Sajjad, Hyderabad",
-    "2 bedroom flat in Saddar area under 15M"
+    "Modern 3 Bedroom Apartment in Qasimabad, Hyderabad",
+    "Luxury 4 Bedroom Villa with Pool in Latifabad Unit 7, Hyderabad",
+    "Renovated 2 Bedroom Family House in Citizen Colony, Hyderabad",
+    "Executive 2 Bedroom Flat in City Center",
+    "Spacious 5 Bedroom Garden Villa in Auto Bhan Road, Hyderabad"
 ];
 
 const AISearch: React.FC = () => {
@@ -61,7 +61,11 @@ const AISearch: React.FC = () => {
                 if (f.bedrooms) params.append('bedrooms', f.bedrooms.toString());
                 if (f.bathrooms) params.append('bathrooms', f.bathrooms.toString());
 
-                window.location.href = `/listings?${params.toString()}`;
+                if (Array.from(params.keys()).length > 0) {
+                    window.location.href = `/listings?${params.toString()}`;
+                } else {
+                    window.location.href = `/listings?search=${encodeURIComponent(query)}`;
+                }
             } else {
                 window.location.href = `/listings?search=${encodeURIComponent(query)}`;
             }

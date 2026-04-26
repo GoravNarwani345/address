@@ -28,7 +28,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ id, title, price, image, im
   const [isFavorited, setIsFavorited] = useState(false);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
-  const displayImages = images.length > 0 ? images : [image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'];
+  const displayImages = images.length > 0 ? images : [image || '/propertyimages/defenseiamge1.webp'];
 
   const nextImg = (e: React.MouseEvent) => {
     e.preventDefault();

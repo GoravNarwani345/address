@@ -1,4 +1,5 @@
 const Message = require('../models/Message');
+const User = require('../models/User');
 
 const chatHandler = (io, socket) => {
     if (socket.userId) {
@@ -14,6 +15,11 @@ const chatHandler = (io, socket) => {
         const { senderId, receiverId, propertyId, content } = data;
 
         try {
+            // Enforce verification check
+            const sender = await User.findById(senderId).select('verified');
+            if (!sender || !sender.verified) {
+                return socket.emit('error_message', { message: 'Email verification required to send messages' });
+            }
             const newMessage = await Message.create({
                 sender: senderId,
                 receiver: receiverId,

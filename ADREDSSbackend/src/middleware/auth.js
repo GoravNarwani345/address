@@ -46,3 +46,18 @@ exports.optionalVerifyToken = (req, res, next) => {
     next();
   }
 };
+
+exports.ensureVerified = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId).select('verified');
+    if (!user || !user.verified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Email verification required to perform this action'
+      });
+    }
+    next();
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Server error during verification check' });
+  }
+};

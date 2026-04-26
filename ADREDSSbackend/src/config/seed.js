@@ -104,28 +104,45 @@ const seedData = async () => {
         const types = ['flat', 'house', 'other'];
         const categories = ['sell', 'rent'];
 
-        // Categorized High-quality Unsplash property images
-        const exteriors = ['1600607686527-6fb886090705', '1512917774080-9991f1c4c750', '1600585154340-be6161a56a0c', '1600596542815-ffad4c1539a9', '1600607687920-4e2a09cf159d', '1583608205776-bfd35f0d9f83'];
-        const livingRooms = ['1484154218962-a197022b5858', '1567016432779-094069958ea5', '1615874959474-d60996e7d728', '1616489953149-75517457e4ac', '1600210492486-7bb5dd093a2b'];
-        const kitchens = ['1556911220-e15b29be8c8f', '1556912177-c5993e59f6c8', '1502672260266-1c1ef2d93688'];
-        const bedroomImages = ['1522708323590-d24dbb6b0267', '1540518614846-7ede433c70c3', '1505693413171-ec561088eb4c', '1536376072261-38c75010e6c9'];
+        // Local Pakistani exteriors from public folder
+        const exteriors = [
+            '/propertyimages/defenseiamge1.webp',
+            '/propertyimages/naseemnager.webp',
+            '/propertyimages/download.jfif',
+            '/propertyimages/images.jfif',
+            '/propertyimages/images (1).jfif',
+            '/propertyimages/images (2).jfif',
+            '/propertyimages/images (3).jfif',
+            '/propertyimages/images (4).jfif',
+            '/propertyimages/images (5).jfif',
+            '/propertyimages/images (6).jfif'
+        ];
+
+        // Local modern inner flat images
+        const innerImages = [
+            '/propertyimages/hyd_modern_lounge.png',
+            '/propertyimages/hyd_modern_bedroom.png',
+            '/propertyimages/images (7).jfif',
+            '/propertyimages/images (8).jfif',
+            '/propertyimages/images (9).jfif',
+            '/propertyimages/images (10).jfif'
+        ];
 
         const properties = [];
 
         for (let i = 0; i < 40; i++) {
             const isBroker = i % 2 === 0;
 
-            // Build a multi-aspect image gallery for each property
-            const extId = exteriors[i % exteriors.length];
-            const livId = livingRooms[i % livingRooms.length];
-            const kitId = kitchens[i % kitchens.length];
-            const bedId = bedroomImages[i % bedroomImages.length];
+            const extImg = exteriors[i % exteriors.length];
+            const inner1 = innerImages[(i * 3) % innerImages.length];
+            const inner2 = innerImages[(i * 3 + 1) % innerImages.length];
+            const inner3 = innerImages[(i * 3 + 2) % innerImages.length];
 
             const propertyImages = [
-                `https://images.unsplash.com/photo-${extId}?auto=format&fit=crop&w=1200&q=80`,
-                `https://images.unsplash.com/photo-${livId}?auto=format&fit=crop&w=1200&q=80`,
-                `https://images.unsplash.com/photo-${kitId}?auto=format&fit=crop&w=1200&q=80`,
-                `https://images.unsplash.com/photo-${bedId}?auto=format&fit=crop&w=1200&q=80`
+                extImg,
+                inner1,
+                inner2,
+                inner3
             ];
 
             // Introduce price variations for market analysis

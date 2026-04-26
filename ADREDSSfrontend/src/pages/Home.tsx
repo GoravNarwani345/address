@@ -33,7 +33,7 @@ const Home: React.FC = () => {
       <section className="relative h-[85vh] flex items-center justify-center overflow-hidden animate-slide-up">
         <div
           className="absolute inset-0 bg-center bg-cover scale-105"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1600&q=80')" }}
+          style={{ backgroundImage: "url('/propertyimages/defenseiamge1.webp')" }}
           aria-hidden
         />
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px]" />
@@ -186,19 +186,19 @@ const Home: React.FC = () => {
               {
                 name: "Qasimabad",
                 tag: "High Liquidity",
-                img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+                img: "/propertyimages/defenseiamge1.webp",
                 stats: "Luxury Hub"
               },
               {
                 name: "Latifabad",
                 tag: "Family Centric",
-                img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
+                img: "/propertyimages/naseemnager.webp",
                 stats: "Established"
               },
               {
                 name: "Citizen Colony",
                 tag: "Peaceful",
-                img: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80",
+                img: "/propertyimages/defenseiamge1.webp",
                 stats: "Upcoming"
               }
             ].map((area, idx) => (
@@ -209,7 +209,12 @@ const Home: React.FC = () => {
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    const fallback = `https://picsum.photos/seed/spotlight-${idx}/800/1000`;
+                    const fallbacks = [
+                      '/propertyimages/defenseiamge1.webp',
+                      '/propertyimages/naseemnager.webp',
+                      '/propertyimages/download.jfif'
+                    ];
+                    const fallback = fallbacks[idx % fallbacks.length];
                     if (target.src !== fallback) target.src = fallback;
                   }}
                 />

@@ -87,7 +87,7 @@ const Favorites: React.FC = () => {
                                     {...property}
                                     id={property.id || (property as any)._id}
                                     price={typeof property.price === 'number' ? `PKR ${property.price.toLocaleString()}` : property.price}
-                                    image={property.images?.[0] || property.image || `https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80`}
+                                    image={property.images?.[0] || property.image || `/propertyimages/naseemnager.webp`}
                                     location={property.address || property.location || 'Location not available'}
                                 />
                             </div>

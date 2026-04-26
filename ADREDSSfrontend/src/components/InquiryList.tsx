@@ -84,7 +84,7 @@ const InquiryList: React.FC<{ role: 'seller' | 'broker' | 'buyer' }> = ({ role }
                         {/* Property Info */}
                         <div className="w-full lg:w-48 h-32 rounded-2xl overflow-hidden shrink-0">
                             <img
-                                src={inquiry.property.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=400&q=80'}
+                                src={inquiry.property.images?.[0] || '/propertyimages/defenseiamge1.webp'}
                                 alt="property"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             />
